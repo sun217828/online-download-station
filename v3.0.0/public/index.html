@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文件下载站 | 内部资源镜像</title>
+  <meta name="description" content="内部大文件直链下载平台，支持断点续传，支持用户上传+审核">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1 class="site-title">文件下载站</h1>
+          <p class="site-subtitle">Internal File Mirror · 大文件直链下载</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span id="fileCount" class="badge">网络错误</span>
+        <button id="announcementBtn" class="btn-icon" title="站点公告">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 .5-1.32l5-5.5A2 2 0 0 1 9 2.18V2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v.18a2 2 0 0 1 1.5.5l5 5.5A2 2 0 0 1 22 9.5V17z"></path>
+            <path d="M2 9.5h20"></path>
+            <path d="M12 2v18"></path>
+          </svg>
+          <span id="announcementDot" class="dot-red hidden"></span>
+        </button>
+        <button id="settingsBtn" class="btn-icon" title="设置">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <button id="refreshBtn" class="btn-refresh" title="刷新列表">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 公告弹层 -->
+  <div id="announcementPanel" class="dropdown-panel hidden">
+    <div class="dp-head">
+      <span class="dp-title">站点公告</span>
+      <button id="closeAnnouncementBtn" class="dp-close">&times;</button>
+    </div>
+    <div class="dp-body" id="announcementList">
+      <div class="dp-loading">加载中...</div>
+    </div>
+  </div>
+
+  <!-- Tab 导航 -->
+  <div class="tab-bar">
+    <div class="container tabs">
+      <button class="tab-btn active" data-tab="downloads">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span>下载列表</span>
+      </button>
+      <button class="tab-btn" data-tab="upload">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <span>我要上传</span>
+        <span id="pendingBadge" class="pending-badge hidden">0</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- 信息条 -->
+  <div class="info-bar">
+    <div class="container info-inner">
+      <div class="info-item">
+        <span class="info-label">带宽</span>
+        <span class="info-value">上行满载 · 直链下载</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">特性</span>
+        <span class="info-value">断点续传 · 上传审核</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">命名建议</span>
+        <span class="info-value mono">软件名_版本号.exe</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="container main-content">
+
+    <!-- =============== Tab 1：下载列表 =============== -->
+    <section id="tab-downloads" class="tab-panel active">
+      <!-- 搜索框 + 筛选 -->
+      <div class="search-section">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="搜索软件名称、版本号或扩展名..." autocomplete="off">
+          <button type="button" id="filterToggleBtn" class="btn-filter-toggle" title="筛选">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            <span>筛选</span>
+          </button>
+          <button type="button" id="historyToggleBtn" class="btn-filter-toggle" title="搜索历史">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>历史</span>
+          </button>
+        </div>
+        <!-- 搜索历史下拉 -->
+        <div id="historyPanel" class="history-panel hidden">
+          <div class="dp-head">
+            <span class="dp-title">搜索历史</span>
+            <button type="button" id="clearHistoryBtn" class="btn-link">清空</button>
+          </div>
+          <div class="dp-body" id="historyList">
+            <div class="dp-empty">登录后才会记录搜索历史</div>
+          </div>
+        </div>
+        <!-- 筛选条 -->
+        <div id="filterBar" class="filter-bar hidden">
+          <div class="filter-group">
+            <label class="filter-label">格式</label>
+            <select id="filterExt" class="filter-select">
+              <option value="">全部</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">大小</label>
+            <select id="filterSize" class="filter-select">
+              <option value="">全部</option>
+              <option value="lt10">&lt; 10 MB</option>
+              <option value="10to100">10 MB – 100 MB</option>
+              <option value="100to1g">100 MB – 1 GB</option>
+              <option value="gt1g">&gt; 1 GB</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">上传日期</label>
+            <select id="filterDate" class="filter-select">
+              <option value="">全部</option>
+              <option value="1d">最近 24 小时</option>
+              <option value="7d">最近 7 天</option>
+              <option value="30d">最近 30 天</option>
+              <option value="90d">最近 90 天</option>
+              <option value="1y">最近一年</option>
+            </select>
+          </div>
+          <div class="filter-group filter-tags-group">
+            <label class="filter-label">标签</label>
+            <div id="filterTagsBox" class="filter-tags-box"></div>
+          </div>
+          <div class="filter-actions">
+            <button type="button" id="filterClearBtn" class="btn-ghost btn-small">清空筛选</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrapper hidden">
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th style="width: 5%;">#</th>
+              <th style="width: 36%;">软件名称 / 版本</th>
+              <th style="width: 10%;">类型</th>
+              <th style="width: 14%;">大小</th>
+              <th style="width: 20%;">更新时间</th>
+              <th style="width: 15%; text-align: right;">下载</th>
+            </tr>
+          </thead>
+          <tbody id="fileTableBody">
+            <tr class="loading-row">
+              <td colspan="6">
+                <div class="loading">
+                  <div class="spinner"></div>
+                  <span>正在读取文件列表...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+          <polyline points="13 2 13 9 20 9"></polyline>
+        </svg>
+        <h3>加载出错</h3>
+        <p>请求失败</p>
+      </div>
+
+      <div id="noResultState" class="empty-state hidden">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <h3>未找到匹配的文件</h3>
+        <p>请尝试其他关键词</p>
+      </div>
+    </section>
+
+    <!-- =============== Tab 2：上传 =============== -->
+    <section id="tab-upload" class="tab-panel">
+      <div class="upload-container">
+        <div class="upload-card">
+          <h2 class="section-title">分享文件给大家</h2>
+          <p class="section-desc">填写型号/描述并选择文件，上传后进入待审核区，管理员审核通过后会发布到下载列表。</p>
+
+          <!-- 2GB 提醒 -->
+          <div class="hint-box">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <div>
+              <strong>建议文件大小不超过 <span id="sizeHint">2 GB</span>。</strong>
+              <p class="hint-sub">超过也可以上传，只是审核会更严格，且下载速度受上行带宽限制。</p>
+            </div>
+          </div>
+
+          <form id="uploadForm" class="upload-form">
+            <div class="form-row">
+              <label for="descInput">型号 / 描述 <span class="req">*</span>
+                <span class="char-count"><span id="descCount">0</span>/<span id="descMax">100</span> 字</span>
+              </label>
+              <input type="text" id="descInput" name="description" maxlength="120"
+                     placeholder="如：SolidWorks 2022 SP5 正式版 64位 中文版..."
+                     autocomplete="off" required>
+              <p class="field-tip">不超过 100 字，不允许特殊字符，前端会自动过滤。</p>
+            </div>
+
+            <div class="form-row">
+              <label>可见性 <span class="req">*</span></label>
+              <div class="radio-group" id="visibilityGroup">
+                <label class="radio-label">
+                  <input type="radio" name="visibility" value="public" checked>
+                  <span>公开（所有人可下载）</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="visibility" value="private">
+                  <span>仅管理员可见</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="visibility" value="hidden">
+                  <span>隐藏启动（管理员审核后生成 #[文件名] 隐藏包，知道直链才能下载）</span>
+                </label>
+                <label class="radio-label user-private-label hidden">
+                  <input type="radio" name="visibility" value="user-private">
+                  <span>仅自己可见（需登录，占用 1GB 私密空间，免审核）</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>文件标签 <span class="req">*</span>
+                <span class="field-tip-inline">至少选 1 个，最多 10 个（不选无法上传）</span>
+              </label>
+              <div id="uploadTagsBox" class="upload-tags-box">
+                <span class="tag-empty">加载标签中...</span>
+              </div>
+              <p class="field-tip">已选 <span id="uploadTagCount">0</span>/10 个</p>
+            </div>
+
+            <div class="form-row">
+              <label>说明文档 <span class="opt-tag">可选</span></label>
+              <div class="desc-file-row">
+                <input type="file" id="descFileInput" name="descFile" accept=".md,.markdown,.txt,.text,.rst,.doc,.docx,.pdf" hidden>
+                <button type="button" id="descFileBtn" class="btn-ghost btn-small">选择说明文档</button>
+                <span id="descFileName" class="desc-file-name">未选择（支持 .md / .txt / .doc / .pdf 等）</span>
+                <button type="button" id="descFileClear" class="btn-link hidden">清除</button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>选择文件 <span class="req">*</span></label>
+              <div id="dropZone" class="drop-zone">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <p class="dz-main">点击选择文件，或把文件拖到这里</p>
+                <p class="dz-sub">支持所有格式，建议文件名格式：软件名_版本号.exe</p>
+                <input type="file" id="fileInput" name="file" hidden required>
+              </div>
+
+              <!-- 选中的文件信息 -->
+              <div id="fileInfo" class="file-info hidden">
+                <div class="fi-main">
+                  <span class="fi-name"></span>
+                  <span class="fi-size tag-gray"></span>
+                  <span id="sizeWarn" class="tag-orange-red hidden">⚠️ 超过建议 2GB</span>
+                </div>
+                <button type="button" id="changeFileBtn" class="btn-link">重新选择</button>
+              </div>
+            </div>
+
+            <!-- 上传进度条 -->
+            <div id="progressBox" class="progress-box hidden">
+              <div class="pb-top">
+                <span id="pbStatus">上传中...</span>
+                <span id="pbPercent">0%</span>
+              </div>
+              <div class="progress-bar"><div id="pbFill" class="pb-fill"></div></div>
+              <div class="pb-bottom">
+                <span id="pbSpeed">-- KB/s</span>
+                <span id="pbRemain">-- 剩余</span>
+              </div>
+            </div>
+
+            <!-- 上传结果 -->
+            <div id="resultBox" class="result-box hidden"></div>
+
+            <div class="form-actions">
+              <button type="submit" id="submitBtn" class="btn-primary" disabled>
+                <span>开始上传</span>
+              </button>
+              <button type="reset" id="resetBtn" class="btn-ghost">重置</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 文件预览页 -->
+  <div id="previewPage" class="preview-page hidden">
+    <div class="container">
+      <div class="preview-topbar">
+        <button id="previewBackBtn" class="btn-ghost btn-small">← 返回列表</button>
+      </div>
+      <!-- 上：封面 + 标题 + 标签 + 下载 -->
+      <div class="preview-head">
+        <div class="preview-cover" id="previewCover"></div>
+        <div class="preview-info">
+          <h1 id="previewTitle">加载中...</h1>
+          <div class="preview-meta">
+            <span id="previewExt" class="ext-tag"></span>
+            <span id="previewSize" class="mono"></span>
+            <span id="previewTime"></span>
+          </div>
+          <div class="preview-tags" id="previewTags"></div>
+          <div class="preview-actions">
+            <a id="previewDownloadBtn" class="btn-download" download>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>下载</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- 中：说明文档 -->
+      <div class="preview-doc">
+        <h3>说明</h3>
+        <pre id="previewDoc" class="preview-doc-content">（无说明）</pre>
+      </div>
+      <!-- 下：子条目 / 压缩包条目 -->
+      <div class="preview-entries">
+        <h3 id="previewEntriesTitle">包内内容</h3>
+        <div id="previewEntries"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理员审核弹窗（隐藏，10 秒内点 Logo 7 次触发） -->
+  <div id="adminModal" class="modal-overlay hidden">
+    <div class="modal-box" id="adminModalBox">
+      <div class="modal-head" id="adminModalHead">
+        <div class="modal-title" title="拖动移动 · 双击最大化">
+          <h2 class="section-title inline">管理员审核面板</h2>
+        </div>
+        <div class="modal-controls">
+          <button id="minimizeAdminModal" class="modal-ctrl-btn" title="最小化">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button id="maximizeAdminModal" class="modal-ctrl-btn" title="最大化/还原">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1"></rect></svg>
+          </button>
+          <button id="closeAdminModal" class="modal-close" title="关闭">&times;</button>
+        </div>
+      </div>
+
+      <!-- 登录区 -->
+      <div id="adminLoginArea">
+        <p class="section-desc">请输入管理员密码登录，以查看和管理待审核的上传文件。</p>
+        <div class="form-row">
+          <label for="adminPwd">管理员密码</label>
+          <input type="password" id="adminPwd" placeholder="请输入管理员密码" autocomplete="off">
+        </div>
+        <div class="form-actions">
+          <button id="adminLoginBtn" class="btn-primary">进入审核</button>
+        </div>
+      </div>
+
+      <!-- 审核列表区 -->
+      <div id="adminPanel" class="hidden">
+        <div class="admin-head">
+          <span class="section-title inline">待审核列表 <span id="pendingCount" class="badge badge-info">0</span></span>
+          <div class="admin-head-right">
+            <button id="announcementManageBtn" class="btn-ghost btn-small">公告管理</button>
+            <button id="userListBtn" class="btn-ghost btn-small">用户列表</button>
+            <button id="notifyBtn" class="btn-ghost btn-small">停机通知</button>
+            <button id="privateListBtn" class="btn-ghost btn-small">文件列表</button>
+            <button id="logoutAdminBtn" class="btn-ghost">退出登录</button>
+          </div>
+        </div>
+
+        <div id="pendingEmpty" class="empty-state modal-empty">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <h3>没有待审核的文件</h3>
+          <p>所有上传的文件都已经审核处理完毕</p>
+        </div>
+
+        <div class="table-wrapper hidden" id="pendingWrapper">
+          <table class="file-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 28%;">文件 / 型号描述</th>
+                <th style="width: 10%;">类型</th>
+                <th style="width: 14%;">大小</th>
+                <th style="width: 20%;">上传时间</th>
+                <th style="width: 23%; text-align: right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="pendingTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 私密文件列表区 -->
+      <div id="privateListView" class="hidden">
+        <div class="admin-head">
+          <span class="section-title inline">私密文件列表 <span id="privateCount" class="badge badge-info">0</span></span>
+          <button id="backToPendingBtn" class="btn-ghost btn-small">← 返回</button>
+        </div>
+
+        <div id="privateEmpty" class="empty-state modal-empty">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <h3>没有私密文件</h3>
+          <p>所有「仅管理员可见」的文件会列在这里</p>
+        </div>
+
+        <div class="table-wrapper hidden" id="privateWrapper">
+          <table class="file-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 30%;">文件 / 描述</th>
+                <th style="width: 10%;">类型</th>
+                <th style="width: 12%;">大小</th>
+                <th style="width: 18%;">更新时间</th>
+                <th style="width: 25%; text-align: right;">直链 / 操作</th>
+              </tr>
+            </thead>
+            <tbody id="privateTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 公告管理区 -->
+      <div id="announcementAdminView" class="hidden">
+        <div class="admin-head">
+          <span class="section-title inline">公告管理 <span id="announcementCount" class="badge badge-info">0</span></span>
+          <button id="backFromAnnouncementBtn" class="btn-ghost btn-small">← 返回</button>
+        </div>
+
+        <!-- 发布/编辑表单 -->
+        <div class="announce-form">
+          <div class="form-row">
+            <label>标题 <span class="req">*</span>
+              <span class="char-count"><span id="annTitleCount">0</span>/80</span>
+            </label>
+            <input type="text" id="annTitle" maxlength="100" placeholder="如：站点维护通知 / v3.1 发布" autocomplete="off">
+          </div>
+          <div class="form-row">
+            <label>类型</label>
+            <select id="annType">
+              <option value="normal">普通</option>
+              <option value="maintenance">维护</option>
+              <option value="release">新版本</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>正文 <span class="req">*</span>
+              <span class="char-count"><span id="annContentCount">0</span>/1000</span>
+            </label>
+            <textarea id="annContent" rows="4" placeholder="公告详情..." maxlength="1200"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="annSubmitBtn" class="btn-primary">发布公告</button>
+            <button type="button" id="annCancelBtn" class="btn-ghost">清空</button>
+          </div>
+        </div>
+
+        <div id="annEmpty" class="empty-state modal-empty">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 .5-1.32l5-5.5A2 2 0 0 1 9 2.18V2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v.18a2 2 0 0 1 1.5.5l5 5.5A2 2 0 0 1 22 9.5V17z"></path></svg>
+          <h3>暂无公告</h3>
+          <p>发布第一条公告后会展示在这里</p>
+        </div>
+
+        <div class="table-wrapper hidden" id="annWrapper">
+          <table class="file-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 35%;">标题 / 正文</th>
+                <th style="width: 12%;">类型</th>
+                <th style="width: 20%;">创建时间</th>
+                <th style="width: 28%; text-align: right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="annTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- 用户列表区 -->
+      <div id="userListView" class="hidden">
+        <div class="admin-head">
+          <span class="section-title inline">用户列表 <span id="userCountBadge" class="badge badge-info">0</span></span>
+          <button id="backFromUserListBtn" class="btn-ghost btn-small">← 返回</button>
+        </div>
+
+        <div id="userListEmpty" class="empty-state modal-empty">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <h3>暂无注册用户</h3>
+          <p>用户注册后会显示在这里，可查看空间使用情况</p>
+        </div>
+
+        <div class="table-wrapper hidden" id="userListWrapper">
+          <table class="file-table user-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 20%;">用户名</th>
+                <th style="width: 22%;">邮箱</th>
+                <th style="width: 35%;">空间使用</th>
+                <th style="width: 12%;">注册时间</th>
+                <th style="width: 6%; text-align: right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- 停机通知发送区 -->
+      <div id="notifyView" class="hidden">
+        <div class="admin-head">
+          <span class="section-title inline">邮件停机通知</span>
+          <button id="backFromNotifyBtn" class="btn-ghost btn-small">← 返回</button>
+        </div>
+        <div id="notifyStatus" class="notify-status"></div>
+        <div class="notify-form">
+          <div class="form-row">
+            <label for="notifySubject">主题</label>
+            <input type="text" id="notifySubject" placeholder="如：服务器维护通知" maxlength="100" autocomplete="off">
+          </div>
+          <div class="form-row">
+            <label for="notifyText">正文</label>
+            <textarea id="notifyText" rows="6" placeholder="维护时间、影响范围、恢复预计等..." maxlength="2000"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="sendNotifyBtn" class="btn-primary">发送通知</button>
+            <span id="notifyRecipientHint" class="field-tip-inline"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© 2024 文件下载站 · 仅限内部使用 · 请勿外传</p>
+      <p class="footer-tip">Chrome / Edge 浏览器支持断点续传，下载中断后重新点击同一链接即可继续。</p>
+    </div>
+  </footer>
+
+  <!-- 设置弹窗 -->
+  <div id="settingsModal" class="modal-overlay hidden">
+    <div class="modal-box settings-box">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2 class="section-title inline">设置</h2>
+        </div>
+        <div class="modal-controls">
+          <button id="settingsCloseBtn" class="modal-close" title="关闭">&times;</button>
+        </div>
+      </div>
+      <div class="settings-tabs">
+        <button class="settings-tab active" data-stab="lang">语言</button>
+        <button class="settings-tab" data-stab="personal">个性化</button>
+        <button class="settings-tab" data-stab="general">通用</button>
+        <button class="settings-tab" data-stab="user">用户</button>
+        <button class="settings-tab" data-stab="feedback">反馈</button>
+      </div>
+      <div class="settings-body">
+        <!-- 语言 -->
+        <div class="settings-panel active" id="stab-lang">
+          <div class="form-row">
+            <label for="setLang">界面语言</label>
+            <select id="setLang" class="filter-select">
+              <option value="zh">简体中文</option>
+              <option value="en">English</option>
+            </select>
+            <p class="field-tip">英文为初步翻译，部分管理员文案仍为中文。</p>
+          </div>
+        </div>
+        <!-- 个性化 -->
+        <div class="settings-panel hidden" id="stab-personal">
+          <div class="form-row">
+            <label for="setFontSize">字号</label>
+            <select id="setFontSize" class="filter-select">
+              <option value="12">12 px（小）</option>
+              <option value="14" selected>14 px（默认）</option>
+              <option value="16">16 px（大）</option>
+              <option value="18">18 px（更大）</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="setFontFamily">字体</label>
+            <select id="setFontFamily" class="filter-select">
+              <option value="system" selected>系统默认</option>
+              <option value="serif">衬线（Songti / SimSun）</option>
+              <option value="mono">等宽（Consolas）</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="setBgColor">主页背景色</label>
+            <input type="color" id="setBgColor" class="color-input" value="#f6f8fa">
+            <span class="field-tip-inline">恢复默认请输入 <code>#f6f8fa</code></span>
+          </div>
+          <div class="form-row">
+            <label>主页背景图</label>
+            <div class="bg-image-wrap">
+              <div class="bg-image-preview" id="bgImagePreview">
+                <span class="bg-image-empty" id="bgImageEmpty">未设置</span>
+                <img id="bgImageThumb" class="hidden" alt="背景图预览">
+              </div>
+              <div class="bg-image-actions">
+                <input type="file" id="bgImageFile" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
+                <button type="button" id="bgImageUploadBtn" class="btn-ghost btn-small">选择图片</button>
+                <button type="button" id="bgImageDeleteBtn" class="btn-ghost btn-small hidden">删除</button>
+                <span class="bg-image-tip" id="bgImageTip">登录后可上传（≤5MB，jpg/png/gif/webp）</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="setBgMode">背景图模式</label>
+            <select id="setBgMode" class="filter-select">
+              <option value="cover" selected>覆盖（铺满）</option>
+              <option value="contain">居中（完整显示）</option>
+              <option value="repeat">平铺（重复）</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="setBoxOpacity">文件浏览框透明度</label>
+            <input type="range" id="setBoxOpacity" class="range-input" min="0.3" max="1" step="0.1" value="1">
+            <span class="field-tip-inline" id="boxOpacityVal">100%</span>
+          </div>
+          <div class="form-row">
+            <label for="setBoxColor">文件浏览框颜色</label>
+            <input type="color" id="setBoxColor" class="color-input" value="#ffffff">
+            <label class="checkbox-label-inline">
+              <input type="checkbox" id="setBoxFollowBg">
+              <span>跟随主页背景色</span>
+            </label>
+          </div>
+        </div>
+        <!-- 通用 -->
+        <div class="settings-panel hidden" id="stab-general">
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="setShowLink" checked>
+              <span>在主页文件列表显示下载链接</span>
+            </label>
+            <p class="field-tip">关闭后，下载按钮仍可用，但不再展示直链 URL。</p>
+          </div>
+          <div class="form-row">
+            <label>联系管理员</label>
+            <p class="admin-email-text" id="setAdminEmail">加载中...</p>
+          </div>
+        </div>
+        <!-- 用户 -->
+        <div class="settings-panel hidden" id="stab-user">
+          <!-- 未登录：登录 + 注册 -->
+          <div id="authLoggedOut">
+            <div class="form-row">
+              <label for="loginUsername">用户名</label>
+              <input type="text" id="loginUsername" placeholder="3-20 位字母/数字/下划线/中划线" autocomplete="off">
+            </div>
+            <div class="form-row">
+              <label for="loginPassword">密码</label>
+              <input type="password" id="loginPassword" placeholder="6-64 位" autocomplete="off">
+            </div>
+            <div class="form-actions">
+              <button type="button" id="loginBtn" class="btn-primary">登录</button>
+              <button type="button" id="showRegisterBtn" class="btn-ghost">去注册</button>
+            </div>
+
+            <!-- 注册表单（默认隐藏） -->
+            <div id="registerBox" class="register-box hidden">
+              <h3 class="section-title">注册新账户</h3>
+              <div class="form-row">
+                <label for="regUsername">用户名 <span class="req">*</span></label>
+                <input type="text" id="regUsername" placeholder="3-20 位，首字符须字母或数字" autocomplete="off">
+              </div>
+              <div class="form-row">
+                <label for="regPassword">密码 <span class="req">*</span></label>
+                <input type="password" id="regPassword" placeholder="6-64 位" autocomplete="off">
+              </div>
+              <div class="form-row">
+                <label for="regPassword2">确认密码 <span class="req">*</span></label>
+                <input type="password" id="regPassword2" placeholder="再输一次" autocomplete="off">
+              </div>
+              <div class="form-row">
+                <label for="regEmail">邮箱 <span class="opt-tag">可选</span></label>
+                <input type="email" id="regEmail" placeholder="用于网站停机通知（可选）" autocomplete="off">
+              </div>
+              <div class="form-actions">
+                <button type="button" id="registerBtn" class="btn-primary">注册并登录</button>
+                <button type="button" id="cancelRegisterBtn" class="btn-ghost">取消</button>
+              </div>
+            </div>
+            <p class="field-tip">注册后获得 1GB 私密文件空间，可上传仅自己可见的文件。</p>
+          </div>
+
+          <!-- 已登录：用户信息 + 改名/改密/退出/注销 -->
+          <div id="authLoggedIn" class="hidden">
+            <div class="user-info-card">
+              <div class="user-info-row">
+                <span class="user-info-label">用户名</span>
+                <span id="userInfoName" class="user-info-value"></span>
+              </div>
+              <div class="user-info-row">
+                <span class="user-info-label">邮箱</span>
+                <span id="userInfoEmail" class="user-info-value"></span>
+              </div>
+              <div class="user-info-row">
+                <span class="user-info-label">私密空间</span>
+                <span id="userInfoUsage" class="user-info-value"></span>
+              </div>
+              <div class="quota-bar-wrap">
+                <div class="quota-bar"><div id="userQuotaFill" class="quota-fill"></div></div>
+                <span id="userQuotaText" class="quota-text">0 B / 1 GB</span>
+              </div>
+              <div id="userLockWarn" class="lock-warn hidden">⚠️ 上传通道已锁死（超出 1GB 配额），请删除部分私密文件后再上传。</div>
+            </div>
+
+            <h3 class="section-title">修改用户名</h3>
+            <div class="form-row">
+              <input type="text" id="changeUsernameInput" placeholder="新用户名">
+              <div class="form-actions">
+                <button type="button" id="changeUsernameBtn" class="btn-ghost btn-small">保存用户名</button>
+              </div>
+            </div>
+
+            <h3 class="section-title">修改密码</h3>
+            <div class="form-row">
+              <label for="oldPassword">原密码</label>
+              <input type="password" id="oldPassword" placeholder="原密码" autocomplete="off">
+            </div>
+            <div class="form-row">
+              <label for="newPassword">新密码</label>
+              <input type="password" id="newPassword" placeholder="6-64 位" autocomplete="off">
+            </div>
+            <div class="form-row">
+              <label for="newPassword2">确认新密码</label>
+              <input type="password" id="newPassword2" placeholder="再输一次" autocomplete="off">
+            </div>
+            <div class="form-actions">
+              <button type="button" id="changePasswordBtn" class="btn-ghost btn-small">保存密码</button>
+            </div>
+
+            <h3 class="section-title">账户操作</h3>
+            <div class="form-actions">
+              <button type="button" id="logoutBtn" class="btn-ghost">退出登录</button>
+              <button type="button" id="deleteAccountBtn" class="btn-danger">注销账户</button>
+            </div>
+            <p class="field-tip">注销会删除你的账户和所有私密文件，不可恢复。</p>
+          </div>
+        </div>
+        <!-- 反馈 -->
+        <div class="settings-panel hidden" id="stab-feedback">
+          <p class="section-desc">匿名反馈，可附 5 张以内图片。如需回复请填写联系方式。</p>
+          <div class="form-row">
+            <label for="fbContent">反馈内容 <span class="req">*</span>
+              <span class="char-count"><span id="fbContentCount">0</span>/300</span>
+            </label>
+            <textarea id="fbContent" rows="4" maxlength="320" placeholder="问题描述、建议或反馈（300 字以内）..."></textarea>
+          </div>
+          <div class="form-row">
+            <label for="fbContact">联系方式 <span class="opt-tag">可选</span></label>
+            <input type="text" id="fbContact" placeholder="邮箱 / QQ / 微信号（可选）" autocomplete="off">
+          </div>
+          <div class="form-row">
+            <label for="fbImages">附图（最多 5 张，每张 ≤ 8MB）</label>
+            <input type="file" id="fbImages" accept="image/*" multiple>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="fbSubmitBtn" class="btn-primary">提交反馈</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
