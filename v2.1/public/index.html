@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文件下载站 | 内部资源镜像</title>
+  <meta name="description" content="内部大文件直链下载平台，支持断点续传，支持用户上传+审核">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1 class="site-title">文件下载站</h1>
+          <p class="site-subtitle">Internal File Mirror · 大文件直链下载</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span id="fileCount" class="badge">网络错误</span>
+        <button id="refreshBtn" class="btn-refresh" title="刷新列表">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tab 导航 -->
+  <div class="tab-bar">
+    <div class="container tabs">
+      <button class="tab-btn active" data-tab="downloads">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span>下载列表</span>
+      </button>
+      <button class="tab-btn" data-tab="upload">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <span>我要上传</span>
+        <span id="pendingBadge" class="pending-badge hidden">0</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- 信息条 -->
+  <div class="info-bar">
+    <div class="container info-inner">
+      <div class="info-item">
+        <span class="info-label">带宽</span>
+        <span class="info-value">上行满载 · 直链下载</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">特性</span>
+        <span class="info-value">断点续传 · 上传审核</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">命名建议</span>
+        <span class="info-value mono">软件名_版本号.exe</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="container main-content">
+
+    <!-- =============== Tab 1：下载列表 =============== -->
+    <section id="tab-downloads" class="tab-panel active">
+      <!-- 搜索框 -->
+      <div class="search-section">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="搜索软件名称、版本号或扩展名..." autocomplete="off">
+        </div>
+      </div>
+
+      <div class="table-wrapper hidden">
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th style="width: 5%;">#</th>
+              <th style="width: 36%;">软件名称 / 版本</th>
+              <th style="width: 10%;">类型</th>
+              <th style="width: 14%;">大小</th>
+              <th style="width: 20%;">更新时间</th>
+              <th style="width: 15%; text-align: right;">下载</th>
+            </tr>
+          </thead>
+          <tbody id="fileTableBody">
+            <tr class="loading-row">
+              <td colspan="6">
+                <div class="loading">
+                  <div class="spinner"></div>
+                  <span>正在读取文件列表...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+          <polyline points="13 2 13 9 20 9"></polyline>
+        </svg>
+        <h3>加载出错</h3>
+        <p>请求失败</p>
+      </div>
+
+      <div id="noResultState" class="empty-state hidden">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <h3>未找到匹配的文件</h3>
+        <p>请尝试其他关键词</p>
+      </div>
+    </section>
+
+    <!-- =============== Tab 2：上传 =============== -->
+    <section id="tab-upload" class="tab-panel">
+      <div class="upload-container">
+        <div class="upload-card">
+          <h2 class="section-title">分享文件给大家</h2>
+          <p class="section-desc">填写型号/描述并选择文件，上传后进入待审核区，管理员审核通过后会发布到下载列表。</p>
+
+          <!-- 2GB 提醒 -->
+          <div class="hint-box">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <div>
+              <strong>建议文件大小不超过 <span id="sizeHint">2 GB</span>。</strong>
+              <p class="hint-sub">超过也可以上传，只是审核会更严格，且下载速度受上行带宽限制。</p>
+            </div>
+          </div>
+
+          <form id="uploadForm" class="upload-form">
+            <div class="form-row">
+              <label for="descInput">型号 / 描述 <span class="req">*</span>
+                <span class="char-count"><span id="descCount">0</span>/<span id="descMax">100</span> 字</span>
+              </label>
+              <input type="text" id="descInput" name="description" maxlength="120"
+                     placeholder="如：SolidWorks 2022 SP5 正式版 64位 中文版..."
+                     autocomplete="off" required>
+              <p class="field-tip">不超过 100 字，不允许特殊字符，前端会自动过滤。</p>
+            </div>
+
+            <div class="form-row">
+              <label>可见性 <span class="req">*</span></label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="visibility" value="public" checked>
+                  <span>公开（所有人可下载）</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="visibility" value="private">
+                  <span>仅管理员可见</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>选择文件 <span class="req">*</span></label>
+              <div id="dropZone" class="drop-zone">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <p class="dz-main">点击选择文件，或把文件拖到这里</p>
+                <p class="dz-sub">支持所有格式，建议文件名格式：软件名_版本号.exe</p>
+                <input type="file" id="fileInput" name="file" hidden required>
+              </div>
+
+              <!-- 选中的文件信息 -->
+              <div id="fileInfo" class="file-info hidden">
+                <div class="fi-main">
+                  <span class="fi-name"></span>
+                  <span class="fi-size tag-gray"></span>
+                  <span id="sizeWarn" class="tag-orange-red hidden">⚠️ 超过建议 2GB</span>
+                </div>
+                <button type="button" id="changeFileBtn" class="btn-link">重新选择</button>
+              </div>
+            </div>
+
+            <!-- 上传进度条 -->
+            <div id="progressBox" class="progress-box hidden">
+              <div class="pb-top">
+                <span id="pbStatus">上传中...</span>
+                <span id="pbPercent">0%</span>
+              </div>
+              <div class="progress-bar"><div id="pbFill" class="pb-fill"></div></div>
+              <div class="pb-bottom">
+                <span id="pbSpeed">-- KB/s</span>
+                <span id="pbRemain">-- 剩余</span>
+              </div>
+            </div>
+
+            <!-- 上传结果 -->
+            <div id="resultBox" class="result-box hidden"></div>
+
+            <div class="form-actions">
+              <button type="submit" id="submitBtn" class="btn-primary" disabled>
+                <span>开始上传</span>
+              </button>
+              <button type="reset" id="resetBtn" class="btn-ghost">重置</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 管理员审核弹窗（隐藏，点 Logo 7 次触发） -->
+  <div id="adminModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 class="section-title inline">管理员审核面板</h2>
+        <button id="closeAdminModal" class="modal-close" title="关闭">&times;</button>
+      </div>
+
+      <!-- 登录区 -->
+      <div id="adminLoginArea">
+        <p class="section-desc">请输入管理员密码登录，以查看和管理待审核的上传文件。</p>
+        <div class="form-row">
+          <label for="adminPwd">管理员密码</label>
+          <input type="password" id="adminPwd" placeholder="请输入管理员密码" autocomplete="off">
+        </div>
+        <div class="form-actions">
+          <button id="adminLoginBtn" class="btn-primary">进入审核</button>
+        </div>
+      </div>
+
+      <!-- 审核列表区 -->
+      <div id="adminPanel" class="hidden">
+        <div class="admin-head">
+          <span class="section-title inline">待审核列表 <span id="pendingCount" class="badge badge-info">0</span></span>
+          <div class="admin-head-right">
+            <button id="privateListBtn" class="btn-ghost btn-small">文件列表</button>
+            <button id="logoutAdminBtn" class="btn-ghost">退出登录</button>
+          </div>
+        </div>
+
+        <div id="pendingEmpty" class="empty-state modal-empty">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <h3>没有待审核的文件</h3>
+          <p>所有上传的文件都已经审核处理完毕</p>
+        </div>
+
+        <div class="table-wrapper hidden" id="pendingWrapper">
+          <table class="file-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 28%;">文件 / 型号描述</th>
+                <th style="width: 10%;">类型</th>
+                <th style="width: 14%;">大小</th>
+                <th style="width: 20%;">上传时间</th>
+                <th style="width: 23%; text-align: right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="pendingTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 私密文件列表区 -->
+      <div id="privateListView" class="hidden">
+        <div class="admin-head">
+          <span class="section-title inline">私密文件列表 <span id="privateCount" class="badge badge-info">0</span></span>
+          <button id="backToPendingBtn" class="btn-ghost btn-small">← 返回</button>
+        </div>
+
+        <div id="privateEmpty" class="empty-state modal-empty">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <h3>没有私密文件</h3>
+          <p>所有「仅管理员可见」的文件会列在这里</p>
+        </div>
+
+        <div class="table-wrapper hidden" id="privateWrapper">
+          <table class="file-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 30%;">文件 / 描述</th>
+                <th style="width: 10%;">类型</th>
+                <th style="width: 12%;">大小</th>
+                <th style="width: 18%;">更新时间</th>
+                <th style="width: 25%; text-align: right;">直链 / 操作</th>
+              </tr>
+            </thead>
+            <tbody id="privateTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© 2024 文件下载站 · 仅限内部使用 · 请勿外传</p>
+      <p class="footer-tip">Chrome / Edge 浏览器支持断点续传，下载中断后重新点击同一链接即可继续。</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
