@@ -1,3 +1,257 @@
+#online-download-station
+
+#File Download Station v3.0
+
+Internal large file direct download platform, supports resumable upload/download, file sharing, user cloud drive, and online preview.
+A lightweight file sharing system designed for internal company use, easy to deploy without complex dependencies. Users can upload files via browser, get direct download links, and support resumable transfers. No registration required for downloads, no speed limits. Each user gets 10GB of personal cloud storage.
+
+---
+
+1. What can this website do?
+
+For regular users (downloaders)
+
+· Direct Download: Click the download button on the browser to directly retrieve files. No speed limits, no waiting for ads.
+· Resumable Download: If the download is interrupted, it can be resumed. Large files won't fail.
+· Online Preview: Preview text files, compressed packages (zip/7z/tar.gz), and internal folder structures of zip files.
+· Quick Sharing: Generate direct links or QR codes for quick sharing. Downloaders can directly retrieve files.
+· Search & Filter: Search by file name/description/tags. Filter by format, size, or category. Search history is saved.
+· Personal Cloud Drive: 10GB space. Can upload personal files, share files, and support resumable uploads.
+· Personalization: Customize background color/image. Adjust font size and blur/transparency for file descriptions.
+· Avatar: Upload custom avatars in JPG/PNG/GIF/WEBP formats, up to 2MB.
+
+For uploaders
+
+· Chunked Upload: Large files are automatically split into 5MB chunks, uploaded concurrently with 4 threads, and automatically retried 3 times on failure.
+· Instant Upload: SHA-256 fingerprint is calculated before upload. If the server has the same file, it completes instantly (users get a copy in their cloud drive).
+· Resumable Upload: If the upload is interrupted, uploaded chunks are not lost and can be resumed.
+· Three Visibility Options:
+  · Public: Visible to everyone. Requires admin approval after upload.
+  · Admin Only: Visible only to administrators after upload.
+  · Private: Visible only to yourself. Stored in "My Cloud Drive". Accessible to others via link. 10GB capacity limit.
+· Description Required: 10-200 character description required when uploading, used for preview display.
+· Tags/Categories: Add tags when uploading (e.g., Movies/Images/Software/Drivers), convenient for search.
+
+For Administrators (admin / root)
+
+· Review Backend: Review files uploaded by users as public. Can approve/reject/transfer to private.
+· User Management: View all users, space usage, upload progress. Can ban/unban/delete/adjust quotas/delete passwords/unblock transfer links.
+· Company Management: Create company/department. Users can apply to join. Root can review (red dot reminder).
+· Announcement Management: Post announcements on the homepage. Supports marquee effect.
+· Email Notifications: Configure SMTP. Users receive emails after approval/rejection.
+· Root Super Admin: Has highest privileges. Can manage admin, review join applications, and view all files.
+
+---
+
+2. Default Account Description
+
+Role Default Source
+root (Super Admin) Yes Automatically created on first server startup. Initial username root, initial password root123.
+admin (Admin) No Created manually by root in "Settings -> Root Management -> User Management" after deployment.
+Regular User No Self-register.
+
+Review Backend Access (Hidden)
+
+· Trigger: Click the Logo in the upper right corner 7 times within 10 seconds.
+· Permission Levels (Based on Login):
+  · root: Direct access, no password.
+  · admin: Enter password to verify. (Enter your own set password, not the legacy ADMIN_PASSWORD).
+  · Regular user/Not logged in: Blocked from entry.
+· Description: ADMIN_PASSWORD is deprecated and only for backward compatibility. It is recommended to use the ADMIN_PASSWORD environment variable for verification. admin123 is the old default.
+· Note: You must log in as root first, enter the backend, and change the initial password (root123 -> strong password).
+
+---
+
+3. File List
+
+File List v3.0:
+
+· package.json - Node.js dependency configuration
+· package-lock.json - Locked version of dependencies
+· server.js - Main backend program (Express)
+· db.js - Database (SQLite) initialization and operations
+· .env.example - Environment variable configuration example
+· public/ - Frontend page
+  · index.html - Main page
+  · app.js - Frontend logic
+  · style.css - Styles
+  · preview.js - File preview logic
+  · README.md - This file (for all users)
+
+Automatically generated files upon running (No manual creation):
+
+· files/ - Public download files
+· files-private/ - User private files (My Cloud Drive + shared)
+· pending/ - Pending review files
+· data/ - SQLite database (app.db)
+· chunks/ - Chunk upload temporary storage (auto-created/cleaned)
+· feedback/ - User feedback
+· avatars/ - User avatars
+
+---
+
+4. Beginner Quick Start (3 Minutes)
+
+I am a Downloader:
+
+1. Open the website link in a browser (provided by admin).
+2. See the file list. Click "Download" to retrieve directly. Click "Preview" to view.
+3. Want to search? Click the gear icon in the top right corner -> User -> Register (use email + password, email optional).
+
+I am an Uploader:
+
+1. Register/Login.
+2. Click "I want to upload" in the top right corner.
+3. Select visibility (Public / Admin Only / Private).
+4. Drag & drop the file. Fill in a 10-200 character description, add tags.
+5. Upload, view progress. After 5 seconds, it will automatically reset to allow uploading the next file.
+6. Want to see your files? Click "My Files".
+
+I am an Admin:
+
+1. Log in with root account (Initial password root123, please change it!).
+2. Click Logo 7 times within 10 seconds to enter the backend, or click the gear icon in the top right corner -> Root Management. (Log in to the review backend using the password you set).
+3. Click the gear icon in the top right corner -> Root Management to manage users, companies, and join requests (with red dot reminders).
+4. Want others to be admins? In "User Management", click "Promote to Admin".
+
+---
+
+5. Core Feature Details
+
+1. Chunked Upload
+
+· Frontend uses File.slice to cut files into 5MB chunks, uploading with 4 concurrent threads.
+· Single chunk automatically retried 3 times. Merge all chunks after completion and verify SHA-256.
+· Interrupted uploads resume without losing uploaded chunks.
+· Unfinished uploads are automatically cleaned up every 24 hours.
+
+2. Instant Upload
+
+· Calculate SHA-256 of the entire file before uploading.
+· If server has the same file -> directly copy a copy to the specified directory, instant completion.
+· If file is in "My Cloud Drive" -> instant copy (within user range).
+
+3. File Preview
+
+· Top: File icon, title, format, size, upload time, direct download/transfer link.
+· Middle: File description.
+· Bottom: Compressed package (zip/7z/tar.gz) internal file structure.
+· Supported formats: Archive file list, archive content list, other files show plain text description.
+
+4. My Cloud Drive
+
+· Automatically gets 10GB space upon registration (default quota, root can adjust in user management).
+· Uploading private files -> automatically saved to cloud drive.
+· Supports resumable upload, instant upload, SHA-256 verification.
+· Over-quota files are automatically blocked from uploading, admin can unblock.
+
+5. Enterprise & Join Application
+
+· Root can create enterprise/departments (supports总公司, subsidiaries, each with 8 enterprise quotas).
+· Regular users can join enterprises via a code.
+· Root reviews in "Root Management -> Join Applications". Settings and Root Management have red dot reminders (>99 is 99+). Or go to "Settings -> Root Management -> Join Application" to view the review list.
+
+6. Personalization Settings
+
+· Font size: 12/14/16/18px.
+· Font: System/Default/Monospace, etc.
+· Background color: 8 preset colors + custom upload. Background image: <=2MB.
+· Background image: Built-in vertical/horizontal/center/anime.
+· File description transparency: 0%-100% (0% fully opaque, 100% fully transparent).
+· File description color: Auto or custom background color.
+· Show/hide uploader.
+· Set automatic cache clearing, takes effect on next visit.
+
+7. Email Notification (Optional)
+
+· After configuring SMTP, admin can batch send emails to users.
+· Purpose: Notify recipients of approval/rejection of transfer links.
+· Requires BC (BCC) or CC recipients, users won't see each other.
+· Suitable for internal promotions, not for spam.
+
+8. Security & Privacy
+
+· Registration requires username + password, email optional. No phone number required.
+· All file operations require permission verification.
+· File visibility:
+  · public: Everyone can see.
+  · private/hidden: Only admin can see.
+  · user-private: Only owner can see and manage.
+  · transfer-link: Owner/Admin can manage.
+· Password prompts are vague, can toggle to plain text.
+
+---
+
+6. Configuration Reference
+
+Environment Variables (systemd service file or .env)
+
+Variable Description Default Value
+PORT Listening Port 8080
+HOST Listening Address 0.0.0.0
+ADMIN_PASSWORD Deprecated (backward compatibility only). Use admin password verification after review backend changes. admin123
+ADMIN_EMAIL Contact Admin Email (for display) -
+USER_QUOTA_BYTES Default user cloud drive quota (root can override in user management) 10737418240 (10GB)
+SMTP_HOST SMTP Server -
+SMTP_PORT SMTP Port 465
+SMTP_SECURE Whether to use SSL true
+SMTP_USER SMTP Account -
+SMTP_PASS SMTP Auth Code -
+SMTP_FROM Sender Address Same as SMTP_USER
+CHUNK_SIZE_BYTES Chunk Size 5242880 (5MB)
+CHUNK_UPLOAD_DIR Chunk Temporary Directory .chunks
+
+For complete configuration instructions, see 部署指南.md (Deployment Guide).
+
+---
+
+7. Which file should I read?
+
+Who are you? Which file to read?
+Deployment/Ops Personnel 部署指南.md (Deployment Guide) - Complete steps from scratch + checklist
+User wanting to know features This document (README.md)
+Developer wanting to modify code server.js (Backend) + public/ (Frontend) + db.js (Database)
+
+---
+
+8. Tech Stack
+
+· Backend: Node.js + Express
+· Database: SQLite (better-sqlite3, no separate database service needed)
+· Upload: Chunked + Resumable + SHA-256 instant upload
+· Preview: adm-zip (zip) + tar (tar.gz)
+· Email: nodemailer
+· Frontend: Native HTML/CSS/JS, no framework dependencies
+· Deployment: systemd auto-start, optional Nginx reverse proxy + Let's Encrypt HTTPS
+
+---
+
+9. FAQ
+
+Q: What if I forget the root password?
+A: Stop the service on the server, delete the root user from data/app.db or directly reset it, restart to reinitialize (will lose user data, use with caution). It is recommended to note the password beforehand.
+
+Q: Upload stuck, not moving?
+A: Check logs sudo journalctl -u file-download -f. Usually it's disk full or network issues. Uploaded chunks are not lost, retry later.
+
+Q: Download speed slow?
+A: This program does not limit speed. It depends on server upstream bandwidth or downloader's downstream bandwidth.
+
+Q: How to change the default 10GB quota?
+A: Change the environment variable USER_QUOTA_BYTES (bytes), restart the service. Or modify the quota for a specific user in Root Management.
+
+Q: How to make the website accessible only from the company intranet?
+A: See Deployment Guide Part 3 Option B, or use ufw to restrict IP ranges.
+
+---
+
+10. Version
+
+v3.0 — Current version, includes chunked upload, user cloud drive, enterprise system, email notifications, personalization, avatars, etc.
+
+If you have questions, first check the "FAQ" section of 部署指南.md (Deployment Guide).
+
+---
 # online-download-station
 # 文件下载站 v3.0
 
