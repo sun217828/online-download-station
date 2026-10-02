@@ -1,0 +1,13 @@
+{
+  "description": "二进制示例数据（演示数据）",
+  "tags": [
+    "二进制",
+    "示例"
+  ],
+  "originalName": "示例数据包.bin",
+  "body": "示例数据包.bin",
+  "visibility": "public",
+  "hasDescriptionDoc": true,
+  "descDocName": "说明.md",
+  "approvedAt": 1790820620537
+}

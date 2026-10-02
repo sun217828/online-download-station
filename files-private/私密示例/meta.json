@@ -1,0 +1,13 @@
+{
+  "description": "仅管理员可见的私密示例（演示数据，可删除）",
+  "tags": [
+    "示例",
+    "私密"
+  ],
+  "originalName": "私密示例.csv",
+  "body": "私密示例.csv",
+  "visibility": "private",
+  "hasDescriptionDoc": true,
+  "descDocName": "说明.md",
+  "approvedAt": 1790820530506
+}

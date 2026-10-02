@@ -1,0 +1,13 @@
+{
+  "description": "隐藏启动包示例（演示数据，可删除）",
+  "tags": [
+    "示例",
+    "隐藏"
+  ],
+  "originalName": "隐藏包示例.zip",
+  "body": "隐藏包示例.log",
+  "visibility": "hidden",
+  "hasDescriptionDoc": false,
+  "descDocName": "",
+  "approvedAt": 1790820530506
+}
